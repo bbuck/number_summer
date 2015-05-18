@@ -5,25 +5,33 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+
+	"github.com/seer-server/script-engine"
 )
 
-func sumNumbers(nums []int) {
-	sum := 0
-	for _, n := range nums {
-		sum += n
-	}
+var (
+	sumNumbers = `
+		function process(nums)
+			sum = 0
+			for i = 1, #nums do
+				sum = sum + nums[i]
+			end
 
-	fmt.Printf("The sum of the given values was %d\n", sum)
-}
+			print("The sum of the given values was " .. sum)
+		end
+	`
 
-func multNumbers(nums []int) {
-	tot := 1
-	for _, n := range nums {
-		tot *= n
-	}
+	multNumbers = `
+		function process(nums)
+			tot = 1
+			for i = 1, #nums do
+				tot = tot * nums[i]
+			end
 
-	fmt.Printf("The product of the given values was %d\n", tot)
-}
+			print("The product of the given values was " .. tot)
+		end
+	`
+)
 
 func main() {
 	if len(os.Args) == 1 {
@@ -35,22 +43,39 @@ func main() {
 	process := flag.String("process", "sum", "Which process to peform on the numbers")
 	flag.Parse()
 
+	e := lua.NewEngine()
+	nums := e.NewTable()
+
 	numStrings := flag.Args()
-	nums := make([]int, len(numStrings))
-	for i, ns := range numStrings {
+	for _, ns := range numStrings {
 		intVal, err := strconv.Atoi(ns)
 		if err != nil {
 			fmt.Printf("Invalid number %q was given!\n", ns)
 
 			return
 		}
-		nums[i] = intVal
+		nums.Append(intVal)
 	}
 
 	switch *process {
 	default:
-		sumNumbers(nums)
+		if err := e.LoadString(sumNumbers); err != nil {
+			fmt.Printf("Script Error: %s\n", err)
+
+			return
+		}
 	case "mult":
-		multNumbers(nums)
+		if err := e.LoadString(multNumbers); err != nil {
+			fmt.Printf("Script Error: %s\n", err)
+
+			return
+		}
+	}
+
+	_, err := e.Call("process", 0, nums)
+	if err != nil {
+		fmt.Printf("Script Error: %s\n", err)
+
+		return
 	}
 }
