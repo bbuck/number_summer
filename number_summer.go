@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"strconv"
@@ -26,20 +27,30 @@ func multNumbers(nums []int) {
 
 func main() {
 	if len(os.Args) == 1 {
-		fmt.Printf("USAGE: %s num[, num[, num[, ...]]]\n", os.Args[0])
+		fmt.Printf("USAGE: %s --process PROCESS num[, num[, num[, ...]]]\n", os.Args[0])
 
 		return
 	}
 
-	numStrings := os.Args[1:]
+	process := flag.String("process", "sum", "Which process to peform on the numbers")
+	flag.Parse()
+
+	numStrings := flag.Args()
 	nums := make([]int, len(numStrings))
 	for i, ns := range numStrings {
 		intVal, err := strconv.Atoi(ns)
 		if err != nil {
 			fmt.Printf("Invalid number %q was given!\n", ns)
+
+			return
 		}
 		nums[i] = intVal
 	}
 
-	multNumbers(nums)
+	switch *process {
+	default:
+		sumNumbers(nums)
+	case "mult":
+		multNumbers(nums)
+	}
 }
