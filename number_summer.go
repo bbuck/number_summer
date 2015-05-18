@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	sumNumbers = `
+	defaultScript = `
 		function process(nums)
 			sum = 0
 			for i = 1, #nums do
@@ -18,17 +18,6 @@ var (
 			end
 
 			print("The sum of the given values was " .. sum)
-		end
-	`
-
-	multNumbers = `
-		function process(nums)
-			tot = 1
-			for i = 1, #nums do
-				tot = tot * nums[i]
-			end
-
-			print("The product of the given values was " .. tot)
 		end
 	`
 )
@@ -40,7 +29,8 @@ func main() {
 		return
 	}
 
-	process := flag.String("process", "sum", "Which process to peform on the numbers")
+	file := flag.String("file", "", "Script file to load with process defined.")
+	code := flag.String("code", "", "Lua code that contains a process function.")
 	flag.Parse()
 
 	e := lua.NewEngine()
@@ -57,16 +47,20 @@ func main() {
 		nums.Append(intVal)
 	}
 
-	switch *process {
-	default:
-		if err := e.LoadString(sumNumbers); err != nil {
+	script := ""
+	if len(*file) > 0 {
+		if err := e.LoadFile(*file); err != nil {
 			fmt.Printf("Script Error: %s\n", err)
-
-			return
 		}
-	case "mult":
-		if err := e.LoadString(multNumbers); err != nil {
-			fmt.Printf("Script Error: %s\n", err)
+	} else if len(*code) > 0 {
+		script = *code
+	} else {
+		script = defaultScript
+	}
+
+	if len(script) > 0 {
+		if err := e.LoadString(script); err != nil {
+			fmt.Printf("Script Error: %d\n", err)
 
 			return
 		}
